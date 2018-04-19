@@ -136,9 +136,9 @@ func NewClient(endpoints []string, caFile string, certFile string, keyFile strin
 
 	if caFile != "" || certFile != "" || keyFile != "" {
 		tlsInfo := transport.TLSInfo{
-			CertFile:      filepath.Join(certFile),
-			KeyFile:       filepath.Join(keyFile),
-			TrustedCAFile: filepath.Join(caFile),
+			CertFile:      certFile,
+			KeyFile:       keyFile,
+			TrustedCAFile: caFile,
 		}
 		tlsConfig, err := tlsInfo.ClientConfig()
 		if err != nil {
