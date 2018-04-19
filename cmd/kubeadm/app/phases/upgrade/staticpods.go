@@ -301,7 +301,7 @@ func performEtcdStaticPodUpgrade(waiter apiclient.Waiter, pathMgr StaticPodPathM
 		return true, fmt.Errorf("fatal error when trying to upgrade the etcd cluster: %v, rolled the state back to pre-upgrade state", err)
 	}
 
-	fmt.Println("[upgrade/etcd] waiting for etcd pod to become available after TLS upgrade")
+	fmt.Println("[upgrade/etcd] waiting for etcd to become available")
 
 	// Initialize the new etcd client if it wasn't pre-initialized
 	if newEtcdClient == nil {
