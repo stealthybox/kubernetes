@@ -26,6 +26,7 @@ import (
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/pkg/transport"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/staticpod"
 )
@@ -110,25 +111,34 @@ func (c GenericClient) GetStatus() (*clientv3.StatusResponse, error) {
 func (c GenericClient) WaitForStatus(delay time.Duration, retries int, retryInterval time.Duration) (*clientv3.StatusResponse, error) {
 	fmt.Printf("[util/etcd] Waiting %v for initial delay\n", delay)
 	time.Sleep(delay)
-	for i := 0; i < retries; i++ {
-		if i > 0 {
-			fmt.Printf("[util/etcd] Waiting %v until next retry\n", retryInterval)
-			time.Sleep(retryInterval)
-		}
-		fmt.Printf("[util/etcd] Attempting to get etcd status %d/%d\n", i+1, retries)
-		resp, err := c.GetStatus()
-		if err != nil {
-			switch err {
-			case context.DeadlineExceeded:
-				fmt.Println("[util/etcd] Attempt timed out")
-			default:
-				fmt.Printf("[util/etcd] Attempt failed with error: %v\n", err)
+
+	stopChan := make(chan struct{})
+	var resultStatus *clientv3.StatusResponse
+
+	wait.Until(func() {
+		if retries > 0 {
+			fmt.Printf("[util/etcd] Attempting to get etcd status\n")
+			resp, err := c.GetStatus()
+			if err != nil {
+				switch err {
+				case context.DeadlineExceeded:
+					fmt.Println("[util/etcd] Attempt timed out")
+				default:
+					fmt.Printf("[util/etcd] Attempt failed with error: %v\n", err)
+				}
+				retries--
+				return
 			}
-			continue
+			fmt.Printf("[util/etcd] Successfully established connection with etcd Server\n")
+			resultStatus = resp
 		}
-		return resp, nil
+		close(stopChan)
+	}, retryInterval, stopChan)
+
+	if resultStatus == nil {
+		return nil, fmt.Errorf("timeout waiting for etcd cluster status")
 	}
-	return nil, fmt.Errorf("timeout waiting for etcd cluster status")
+	return resultStatus, nil
 }
 
 // NewClient creates a new EtcdCluster client
