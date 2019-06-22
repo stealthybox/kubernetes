@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
@@ -53,6 +54,7 @@ func New(quiet bool) *SysInfo {
 		applyNetworkingInfo,
 		applyAppArmorInfo,
 		applySeccompInfo,
+		applyCgroupNsInfo,
 	}...)
 
 	for _, o := range ops {
@@ -195,13 +197,14 @@ func applyCPUSetCgroupInfo(info *SysInfo, cgMounts map[string]string) []string {
 
 	var err error
 
-	cpus, err := ioutil.ReadFile(path.Join(mountPoint, "cpuset.cpus"))
+	prefix := getPrefix(mountPoint)
+	cpus, err := ioutil.ReadFile(path.Join(mountPoint, prefix+"cpus"))
 	if err != nil {
 		return warnings
 	}
 	info.Cpus = strings.TrimSpace(string(cpus))
 
-	mems, err := ioutil.ReadFile(path.Join(mountPoint, "cpuset.mems"))
+	mems, err := ioutil.ReadFile(path.Join(mountPoint, prefix+"mems"))
 	if err != nil {
 		return warnings
 	}
@@ -250,6 +253,15 @@ func applyAppArmorInfo(info *SysInfo, _ map[string]string) []string {
 	return warnings
 }
 
+// applyCgroupNsInfo adds cgroup namespace information to the info.
+func applyCgroupNsInfo(info *SysInfo, _ map[string]string) []string {
+	var warnings []string
+	if _, err := os.Stat("/proc/self/ns/cgroup"); !os.IsNotExist(err) {
+		info.CgroupNamespaces = true
+	}
+	return warnings
+}
+
 // applySeccompInfo checks if Seccomp is supported, via CONFIG_SECCOMP.
 func applySeccompInfo(info *SysInfo, _ map[string]string) []string {
 	var warnings []string
@@ -266,6 +278,13 @@ func applySeccompInfo(info *SysInfo, _ map[string]string) []string {
 func cgroupEnabled(mountPoint, name string) bool {
 	_, err := os.Stat(path.Join(mountPoint, name))
 	return err == nil
+}
+
+func getPrefix(path string) string {
+	if _, err := os.Stat(filepath.Join(path, "cpus")); err == nil {
+		return ""
+	}
+	return "cpuset."
 }
 
 func readProcBool(path string) bool {
