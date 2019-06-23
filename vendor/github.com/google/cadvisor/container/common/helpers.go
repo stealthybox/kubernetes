@@ -101,6 +101,10 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 		if utils.FileExists(cpusetRoot) {
 			spec.HasCpu = true
 			mask := readString(cpusetRoot, "cpuset.cpus")
+			if mask == "" {
+				// fallthrough to support noprefix cgroup mounts
+				mask = readString(cpusetRoot, "cpus")
+			}
 			spec.Cpu.Mask = utils.FixCpuMask(mask, mi.NumCores)
 		}
 	}
