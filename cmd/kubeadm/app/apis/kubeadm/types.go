@@ -21,6 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config"
 	kubeproxyconfig "k8s.io/kubernetes/pkg/proxy/apis/config"
+	addoninstallerconfig "sigs.k8s.io/addon-operators/installer/pkg/apis/config"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -185,6 +186,8 @@ type ComponentConfigs struct {
 	Kubelet *kubeletconfig.KubeletConfiguration
 	// KubeProxy holds the ComponentConfiguration for the kube-proxy
 	KubeProxy *kubeproxyconfig.KubeProxyConfiguration
+	// AddonInstaller holds the ComponentConfiguration for the addon-installer
+	AddonInstaller *addoninstallerconfig.AddonInstallerConfiguration
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
