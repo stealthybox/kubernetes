@@ -28,6 +28,7 @@ go_library(
         "//staging/src/k8s.io/cluster-bootstrap/token/util:go_default_library",
         "//staging/src/k8s.io/cluster-bootstrap/util/secrets:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/sigs.k8s.io/addon-operators/installer/pkg/apis/config:go_default_library",
     ],
 )
 
